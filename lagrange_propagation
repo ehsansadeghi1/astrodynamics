@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+import numpy as np
+from numpy import linalg as la
+
+
+def f_g(r0, v0, dt, mu):
+    """
+    Lagrange f and g coefficients from the change
+    in true anomaly since time t0
+    mu  - gravitational parameter (km^3/s^2)
+    dt  - change in true anomaly (degrees)
+    r0  - position vector at time t0 (km)
+    v0  - velocity vector at time t0 (km/s)
+    h   - angular momentum (km^2/s)
+    vr0 - radial component of v0 (km/s)
+    r   - radial position after the change in true anomaly
+    f   - the Lagrange f coefficient (dimensionless)
+    g   - the Lagrange g coefficient (s)
+    """
+    # --------------------------------------------
+    h = la.norm(np.cross(r0, v0))
+    vr0 = np.inner(v0, r0)/la.norm(r0)
+    r0 = la.norm(r0)
+    dt = np.radians(dt)
+    s = np.sin(dt)
+    c = np.cos(dt)
+    r = h**2/mu/(1 + (h**2/mu/r0 - 1)*c - h*vr0*s/mu)
+    r = float(r)
+    f = 1 - mu*r*(1 - c)/h**2
+    g = r*r0*s/h
+    return f, g
+
+
+def fDot_gDot(r0, v0, dt, mu):
+    """
+    This function calculates the time derivatives of the Lagrange
+    f and g coefficients from the change in true anomaly since time t0.
+    mu   - gravitational parameter (km^3/s^2)
+    dt   - change in true anomaly (degrees)
+    r0   - position vector at time t0 (km)
+    v0   - velocity vector at time t0 (km/s)
+    h    - angular momentum (km^2/s)
+    vr0  - radial component of v0 (km/s)
+    fdot - time derivative of the Lagrange f coefficient (1/s)
+    gdot - time derivative of the Lagrange g coefficient (dimensionless)
+    """
+    h = la.norm(np.cross(r0, v0))
+    vr0 = np.inner(v0, r0)/la.norm(r0)
+    r0 = la.norm(r0)
+    dt = np.radians(dt)
+    c = np.cos(dt)
+    s = np.sin(dt)
+    fdot = mu/h*(vr0/h*(1 - c) - s/r0)
+    fdot = float(fdot)
+    gdot = 1 - mu*r0/h**2*(1 - c)
+    gdot = float(gdot)
+    return fdot, gdot
+
+
+def rv_from_r0v0_ta(r0, v0, dt, mu):
+    """
+    This program computes the state vector [R,V]
+    from the initial state vector [R0,V0]
+    and the change in true anomaly, using the data in Example 2.13.
+    mu - gravitational parameter (km^3/s^2)
+    R0 - the initial position vector (km)
+    V0 - the initial velocity vector (km/s)
+    r0 - magnitude of R0
+    v0 - magnitude of V0
+    R  - final position vector (km)
+    V  - final velocity vector (km/s)
+    r  - magnitude of R
+    v  - magnitude of V
+    dt - change in true anomaly (degrees)
+    """
+    dummy1 = f_g(r0, v0, dt, mu)
+    f = dummy1[0]
+    g = dummy1[1]
+    dummy2 = fDot_gDot(r0, v0, dt, mu)
+    fdot = float(dummy2[0])
+    gdot = float(dummy2[1])
+    r = f*r0 + g*v0
+    v = fdot*r0 + gdot*v0
+    r = np.array(r).flatten().tolist()
+    v = np.array(v).flatten().tolist()
+    return r, v
+
+
+r0 = np.matrix([8182.4, -6865.9, 0])
+v0 = np.matrix([0.47572, 8.8116, 0])
+dt = 120
+mu = 398600
+a = rv_from_r0v0_ta(r0, v0, dt, mu)
+r = a[0]
+v = a[1]
+print(r)
+print(v)
