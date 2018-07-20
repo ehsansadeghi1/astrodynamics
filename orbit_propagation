@@ -1,0 +1,43 @@
+"""
+numerically integration of Two Body Orbit Equation
+"""
+import numpy as np
+from scipy.integrate import solve_ivp
+import numpy.linalg as la
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+def dy_dt(t, f):
+    global mu
+    x = f[0]
+    y = f[1]
+    z = f[2]
+    vx = f[3]
+    vy = f[4]
+    vz = f[5]
+    r = la.norm([x, y, z])
+    ax = -mu*x/(r**3)
+    ay = -mu*y/(r**3)
+    az = -mu*z/(r**3)
+    dydt = [vx, vy, vz, ax, ay, az]
+    return dydt
+
+
+t0 = 0
+tf = 1*3200
+mu = 398600
+r0 = [1600, 5310, 3800]
+v0 = [-7.35, 0.46, 2.47]
+t = [t0, tf]
+y0 = [r0[0], r0[1], r0[2], v0[0], v0[1], v0[2]]
+tval = np.linspace(t0, tf, tf)
+sol = solve_ivp(dy_dt, t, y0, method='RK45', t_eval=tval, rtol=1e-8, atol=1e-10)
+y = sol.y
+y = y.tolist()
+t = sol.t
+t = t.tolist()
+rx = y[0]
+ry = y[1]
+rz = y[2]
+ax = plt.axes(projection='3d')
+ax.plot(rx, ry, rz)
+plt.autoscale(enable=True, tight=True)
